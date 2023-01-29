@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\Common_ASP_Core_WebApi.props" />
+</Project>
