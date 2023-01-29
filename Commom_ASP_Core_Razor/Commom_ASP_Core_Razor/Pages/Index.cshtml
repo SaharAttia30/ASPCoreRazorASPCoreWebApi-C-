@@ -1,0 +1,303 @@
+﻿@page
+@addTagHelper*, Microsoft.AspNetCore.Mvc.TagHelpers
+@model Commom_ASP_Core_Razor.Pages.IndexModel
+@{
+    Layout = null;
+}
+<html>
+<head>
+    <style type=text/css>
+        .buttonAbsolutePosition{
+        background: #FF0000;
+        font-family: Arial;
+        font-size: XX-Large;
+        width: 60px;
+        height: 60px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        }
+    </style>
+</head>
+<body>
+   
+    <form method="post">
+            <div>
+                    @for (int i = 0; i < 4; i++)
+                    {
+                        @for(int j = 0; j < 4; j++){
+                            @if ((i * 4 + j) == 15){
+                                continue;
+                            }
+                            <input type="button" id="@(i * 4 + j)" value="@(i * 4 + j + 1)" style="left : @(60 * j + 100 + "px") ; top: @(60 * i + 100 + "px")" onClick="myClick()" class='buttonAbsolutePosition' />
+                        }
+                    }
+            </div>
+    </form>
+
+    <script type="text/javascript">
+        var xmlHttp = new XMLHttpRequest();
+        window.onload = function ()
+        {
+            if (window.ActiveXObject)
+            {
+                xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+            }
+            else
+            {
+                xmlHttp = new XMLHttpRequest();
+            }
+        }
+        var intervalID;
+        var counter = 0;
+        var currButton = null;
+        let flag = false;
+        var indRowEmpty, indColEmpty;
+        var indRow, indCol;
+        var myMatr = new Array(4);
+        var myMatrRes = new Array(4);
+        var url = "http://localhost:5120/api/My/Init";
+        xmlHttp.open("POST", url, true);
+        xmlHttp.setRequestHeader('Content-Type', 'application/json');
+        xmlHttp.onreadystatechange = getResponseInit;
+        xmlHttp.send();
+        
+        function getResponseInit()
+        {
+            if (xmlHttp.readyState == 4)
+            {
+                var tempJSON_Object_tmp = xmlHttp.responseText;
+                let tempJSON_Object = tempJSON_Object_tmp.split(",");
+                let tmp_nums = [];
+                for(let i  = 0 ; i < tempJSON_Object.length ; i++){
+                    let tmp_str = "";
+                    for (let j = 0; j < tempJSON_Object[i].length; j++){
+                        let tmp = tempJSON_Object[i][j];
+                        if (tempJSON_Object[i][j] >= "0" && tempJSON_Object[i][j] <= "9"){
+                            tmp_str += tempJSON_Object[i][j];
+                        }
+                    }
+                    tmp_nums.push(tmp_str);
+                }
+                let cnt = 0;
+                let counter = 0;
+                let colors_arr =[];
+                let nums_arr = [];
+                let tmp_str = "";
+
+                for (let i = 0; i < tmp_nums.length; i++)
+                {
+                    if(counter == 3){
+                        colors_arr.push(tmp_str);
+                        tmp_str = "";
+                        nums_arr.push(tmp_nums[i]);
+                        counter = 0;
+                        continue;
+
+                    }
+                    if (cnt == 2){
+                        tmp_str += tmp_nums[i];
+                        cnt = 0;
+                        counter += 1;
+                        continue;
+                    }
+                    tmp_str += tmp_nums[i] + ",";
+                    cnt += 1;
+                    counter += 1;
+                }
+                indRowEmpty = 3;
+                indColEmpty = 3;
+                var k = 0;
+                for (let i = 0; i < 4; i++)
+                {
+                    myMatr[i] = new Array(4);
+                    myMatrRes[i] = new Array(4);
+                    for (let j = 0; j < 4; j++)
+                    {
+                        if (i * 4 + j == 15)
+                        {
+                            myMatr[i][j] = (i * 4 + j).toString();
+                            myMatrRes[i][j] = 0;
+                            break;
+                        }
+                        myMatr[i][j] = (i * 4 + j).toString();
+                        var tempButton = document.getElementById(i * 4 + j);
+                        k += 1;
+                        myMatr[i][j] = i * 4 + j;
+                        tempButton.value = nums_arr[i * 4 + j];
+                        myMatrRes[i][j] = Number( nums_arr[i * 4 + j]);
+                        tempButton.style.left = 100 + j * 60 + "px";
+                        tempButton.style.top = 100 + i * 60 + "px";
+                        let arr_rgb = colors_arr[i * 4 + j].split(",");
+                        var R = arr_rgb[0];
+                        var G = arr_rgb[1];
+                        var B = arr_rgb[2];
+                        tempButton.style.backgroundColor =
+                            'rgb(' + R.toString() + ',' + G.toString() + ',' + B.toString() + ')';
+                    }
+                }
+            }
+        }
+        var row = 0;
+        var col = 0;
+        function myClick()
+        {
+            if (flag == true)
+            {
+                return;
+            }
+            else
+            {
+                flag = true;
+            }
+            currButton = event.srcElement;
+            let myButton_ID = currButton.id;
+            button_Clicked = document.getElementById(myButton_ID);
+            
+            for (var i = 0; i < 4; i++)
+            {
+                for (var j = 0; j < 4; j++)
+                {
+                    if (myMatr[i][j] == myButton_ID)
+                    {
+                        row = i;
+                        col = j;
+                    }
+                    if (myMatr[i][j] == "15")
+                    {
+                        indRowEmpty = i;
+                        indColEmpty = j;
+                    }
+                }
+            }
+            var myJSON_Object = new Object();
+            myJSON_Object.indRow = row.toString();
+            myJSON_Object.indCol = col.toString();
+            myJSON_Object.indRowEmpty = indRowEmpty.toString();
+            myJSON_Object.indColEmpty = indColEmpty.toString();
+            var myJsonString = JSON.stringify(myJSON_Object);
+            var url = "http://localhost:5120/api/My/next_step";
+            xmlHttp.open("POST", url, true);
+            xmlHttp.setRequestHeader('Content-Type', 'application/json');
+            xmlHttp.onreadystatechange = getResponseFraction;
+            xmlHttp.send(myJsonString);
+           
+        }
+        function getResponseFraction()
+        {
+            if (xmlHttp.readyState == 4) {
+                var result_from_server = xmlHttp.responseText;
+                if (result_from_server != "")
+                {
+                    var temp1 = myMatr[row][col];
+                    myMatr[row][col] = myMatr[indRowEmpty][indColEmpty];
+                    myMatr[indRowEmpty][indColEmpty] = temp1;
+                    if (result_from_server == "Right")
+                    {
+                        intervalID = setInterval(motionRight, 10);
+                    }
+                    else if (result_from_server == "Down")
+                    {
+                        intervalID = setInterval(motionDown, 10);
+                    }
+                    else if (result_from_server == "Up")
+                    {
+                        intervalID = setInterval(motionUp, 10);
+                    }
+                    else if (result_from_server == "Left")
+                    {
+                        intervalID = setInterval(motionLeft, 10);
+                    }
+                    var temp2 = myMatrRes[row][col];
+                    myMatrRes[row][col] = myMatrRes[indRowEmpty][indColEmpty];
+                    myMatrRes[indRowEmpty][indColEmpty] = temp2;
+                    indRowEmpty = row;
+                    indColEmpty = col;
+                }
+                else{
+                    flag = false;
+                }
+            }
+        }
+
+        var counter = 0;
+
+        function motionRight()
+        {
+            var currLeft = button_Clicked.style.left.replace("px", "");
+            button_Clicked.style.left = parseInt(currLeft) + 1 + "px";
+            counter++;
+            if (counter == 60)
+            {
+                counter = 0;
+                indRowEmpty = indRow;
+                indColEmpty = indCol;
+                flag = false;
+                isGameOver();
+                clearInterval(intervalID);
+            }
+        }
+
+        function motionLeft()
+        {
+            var currLeft = button_Clicked.style.left.replace("px", "");
+            button_Clicked.style.left = parseInt(currLeft) - 1 + "px";
+            counter++;
+            if (counter == 60)
+            {
+                counter = 0;
+                indRowEmpty = indRow;
+                indColEmpty = indCol;
+                flag = false;
+                isGameOver();
+                clearInterval(intervalID);
+            }
+        }
+
+        function motionDown()
+        {
+            var currTop = button_Clicked.style.top.replace("px", "");
+            button_Clicked.style.top = parseInt(currTop) + 1 + "px";
+            counter++;
+            if (counter == 60)
+            {
+                counter = 0;
+                indRowEmpty = indRow;
+                indColEmpty = indCol;
+                flag = false;
+                isGameOver();
+                clearInterval(intervalID);
+            }
+        }
+
+        function motionUp()
+        {
+            var currTop = button_Clicked.style.top.replace("px", "");
+            button_Clicked.style.top = parseInt(currTop) - 1 + "px";
+            counter++;
+            if (counter == 60)
+            {
+                counter = 0;
+                indRowEmpty = indRow;
+                indColEmpty = indCol;
+                flag = false;
+                isGameOver();
+                clearInterval(intervalID);
+            }
+        }
+        function isGameOver()
+        {
+            if (myMatrRes[0][0] == "1" && myMatrRes[0][1] == "2")
+            {
+                var r = confirm("Start new game?");
+                if (r == true)
+                {
+                    document.location.reload();
+                }
+            }
+        }
+    </script>
+      
+</body>
+</html>
+

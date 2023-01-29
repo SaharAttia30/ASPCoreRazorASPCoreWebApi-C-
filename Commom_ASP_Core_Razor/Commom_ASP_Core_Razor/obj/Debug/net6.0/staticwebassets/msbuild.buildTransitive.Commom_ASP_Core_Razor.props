@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\Commom_ASP_Core_Razor.props" />
+</Project>
